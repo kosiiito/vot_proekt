@@ -1,27 +1,98 @@
 version: "3.8"
 services:
+  # Load Balancer
+  haproxy:
+    image: haproxy:2.3
+    container_name: haproxy
+    ports:
+      - "3307:3306"  # Changed external port to 3307
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - db1
+      - db2
+      - db3
+
+  # MariaDB Nodes
+  db1:
+    image: mariadb:10.5
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      CLUSTER_NAME: my_galera_cluster
+      XTRABACKUP_PASSWORD: xtrabackup
+      NODE_ADDRESS: db1
+    networks:
+      - galera-net
+
+  db2:
+    image: mariadb:10.5
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      CLUSTER_NAME: my_galera_cluster
+      XTRABACKUP_PASSWORD: xtrabackup
+      NODE_ADDRESS: db2
+    networks:
+      - galera-net
+
+  db3:
+    image: mariadb:10.5
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      CLUSTER_NAME: my_galera_cluster
+      XTRABACKUP_PASSWORD: xtrabackup
+      NODE_ADDRESS: db3
+    networks:
+      - galera-net
+
+  # Frontend
   frontend:
     build: ./frontend
     container_name: frontend_c
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
+
+  # Backend
   backend:
     build: ./backend
     container_name: backend_c
     ports:
       - "4000:4000"
     environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=rootpassword
+      - DB_HOST=haproxy
+      - DB_USER=user
+      - DB_PASSWORD=password
       - DB_NAME=mydb
-  db:
-    image: mariadb:latest
-    container_name: mariadb_c
+      - KEYCLOAK_URL=http://keycloak:8080/auth
+      - KEYCLOAK_REALM=myrealm
+      - KEYCLOAK_CLIENT_ID=myclient
+      - KEYCLOAK_CLIENT_SECRET=mysecret
+    depends_on:
+      - db1
+      - db2
+      - db3
+
+  # Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mydb
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
     ports:
-      - "3306:3306"
-    volumes:
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - "8080:8080"
+    command:
+      - start-dev
+
+networks:
+  galera-net:
+    driver: bridge
