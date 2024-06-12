@@ -6,6 +6,7 @@ const session = require('express-session');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 const keycloak = new Keycloak({}, {
   "realm": process.env.KEYCLOAK_REALM,
@@ -28,7 +29,7 @@ app.use(keycloak.middleware());
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
-  port: 3307,  
+  port: 3307,  // Changed to match the HAProxy configuration
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME
@@ -49,6 +50,17 @@ app.get('/', keycloak.protect(), (req, res) => {
       return;
     }
     res.json(results);
+  });
+});
+
+app.post('/', keycloak.protect(), (req, res) => {
+  const { title } = req.body;
+  db.query('INSERT INTO your_table_name (title) VALUES (?)', [title], (err, results) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
+    res.json({ id: results.insertId, title });
   });
 });
 

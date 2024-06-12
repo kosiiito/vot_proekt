@@ -12,6 +12,8 @@ services:
       - db1
       - db2
       - db3
+    networks:
+      - galera-net
 
   # MariaDB Nodes
   db1:
@@ -61,6 +63,8 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - galera-net
 
   # Backend
   backend:
@@ -81,6 +85,8 @@ services:
       - db1
       - db2
       - db3
+    networks:
+      - galera-net
 
   # Keycloak
   keycloak:
@@ -92,6 +98,8 @@ services:
       - "8080:8080"
     command:
       - start-dev
+    networks:
+      - galera-net
 
 networks:
   galera-net:
