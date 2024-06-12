@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  frontend:
+    build: ./frontend
+    container_name: frontend_c
+    ports:
+      - "3000:3000"
+  backend:
+    build: ./backend
+    container_name: backend_c
+    ports:
+      - "4000:4000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - DB_NAME=mydb
+  db:
+    image: mariadb:latest
+    container_name: mariadb_c
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
