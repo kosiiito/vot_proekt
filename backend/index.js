@@ -18,6 +18,11 @@ const keycloak = new Keycloak({}, {
   }
 });
 
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
+
 app.use(session({
   secret: 'some secret',
   resave: false,
@@ -29,7 +34,7 @@ app.use(keycloak.middleware());
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
-  port: 3307,  // Changed to match the HAProxy configuration
+  port: 3307,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME

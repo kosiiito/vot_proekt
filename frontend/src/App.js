@@ -5,28 +5,34 @@ function App() {
   const [title, setTitle] = useState('');
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token');
     fetch('http://localhost:4000', {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
     })
     .then(response => response.json())
-    .then(data => setData(data))
+    .then(data => {
+      console.log('Fetched data:', data);
+      setData(data);
+    })
     .catch(error => console.error('Error:', error));
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('access_token');
     fetch('http://localhost:4000', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ title })
     })
     .then(response => response.json())
     .then(newItem => {
+      console.log('New item added:', newItem);
       setData([...data, newItem]);
       setTitle('');
     })
