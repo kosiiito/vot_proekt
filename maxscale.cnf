@@ -1,62 +1,39 @@
 [maxscale]
-threads=auto
+threads=2
 
-Define the servers (MariaDB nodes)
-[server1]
-type=server
-address=mariadb1
-port=3306
-protocol=MariaDBBackend
-
-[server2]
-type=server
-address=mariadb2
-port=3306
-protocol=MariaDBBackend
-
-Define the Monitor for the servers
-[MariaDB-Monitor]
-type=monitor
-module=mariadbmon
-servers=server1,server2
-user=maxscale_user
-passwd=maxscale_password
-monitor_interval=2000
-
-Define a read-write service and a listener
-[Read-Write-Service]
+# Global parameters
+[Galera Service]
 type=service
 router=readwritesplit
-servers=server1,server2
-user=maxscale_user
-passwd=maxscale_password
+servers=db1, db2
+user=maxscaleuser
+password=maxscalepass
+router_options=slave_selection_criteria=LEAST_CONNECTIONS
 
-[Read-Write-Listener]
+[Galera Listener]
 type=listener
-service=Read-Write-Service
+service=Galera Service
 protocol=MariaDBClient
 port=3306
 
-Define a MaxScale GUI (optional)
-[MaxAdmin-Service]
+[db1]
+type=server
+address=db1
+port=3306
+protocol=MariaDBBackend
+
+[db2]
+type=server
+address=db2
+port=3306
+protocol=MariaDBBackend
+
+[MaxAdmin Service]
 type=service
 router=cli
 
-[MaxAdmin-Listener]
+[MaxAdmin Listener]
 type=listener
-service=MaxAdmin-Service
+service=MaxAdmin Service
 protocol=maxscaled
-port=6603
-
-[MaxGUI-Service]
-type=service
-router=httpd
-servers=server1
-user=admin
-passwd=admin_password
-
-[MaxGUI-Listener]
-type=listener
-service=MaxGUI-Service
-protocol=httpd
-port=8989
+socket=default

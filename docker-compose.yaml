@@ -1,99 +1,105 @@
-version: "3.8"
+version: '3.8'
+
 services:
-  # Load Balancer
-  haproxy:
-    image: haproxy:2.3
-    container_name: haproxy
-    ports:
-      - "3307:3306"  # Changed external port to 3307
-    volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-    depends_on:
-      - db1
-      - db2
-      - db3
-
-  # MariaDB Nodes
-  db1:
-    image: mariadb:10.5
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mydb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      CLUSTER_NAME: my_galera_cluster
-      XTRABACKUP_PASSWORD: xtrabackup
-      NODE_ADDRESS: db1
-    networks:
-      - galera-net
-
-  db2:
-    image: mariadb:10.5
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mydb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      CLUSTER_NAME: my_galera_cluster
-      XTRABACKUP_PASSWORD: xtrabackup
-      NODE_ADDRESS: db2
-    networks:
-      - galera-net
-
-  db3:
-    image: mariadb:10.5
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mydb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      CLUSTER_NAME: my_galera_cluster
-      XTRABACKUP_PASSWORD: xtrabackup
-      NODE_ADDRESS: db3
-    networks:
-      - galera-net
-
-  # Frontend
   frontend:
-    build: ./frontend
-    container_name: frontend_c
+    image: your-frontend-image
+    environment:
+      - BACKEND_URL=http://backend:8080
+      - KEYCLOAK_URL=http://keycloak:8080
     ports:
       - "3000:3000"
     depends_on:
       - backend
+      - keycloak
 
-  # Backend
-  backend:
-    build: ./backend
-    container_name: backend_c
-    ports:
-      - "4000:4000"
+  frontend-dev:
+    image: your-frontend-dev-image
     environment:
-      - DB_HOST=haproxy
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=mydb
-      - KEYCLOAK_URL=http://keycloak:8080/auth
-      - KEYCLOAK_REALM=myrealm
-      - KEYCLOAK_CLIENT_ID=myclient
-      - KEYCLOAK_CLIENT_SECRET=mysecret
+      - BACKEND_URL=http://backend:8080
+      - KEYCLOAK_URL=http://keycloak:8080
+    volumes:
+      - ./frontend:/usr/src/app
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+      - keycloak
+
+  backend:
+    image: your-backend-image
+    environment:
+      - DATABASE_URL=mysql://user:password@maxscale/dbname
+      - KEYCLOAK_URL=http://keycloak:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - maxscale
+      - keycloak
+
+  backend-dev:
+    image: your-backend-dev-image
+    environment:
+      - DATABASE_URL=mysql://user:password@maxscale/dbname
+      - KEYCLOAK_URL=http://keycloak:8080
+    volumes:
+      - ./backend:/usr/src/app
+    ports:
+      - "8081:8080"
+    depends_on:
+      - maxscale
+      - keycloak
+
+  keycloak:
+    image: jboss/keycloak
+    environment:
+      - DB_VENDOR=mysql
+      - DB_ADDR=maxscale
+      - DB_DATABASE=keycloak
+      - DB_USER=keycloak
+      - DB_PASSWORD=keycloak
+    ports:
+      - "8080:8080"
+    depends_on:
+      - maxscale
+
+  maxscale:
+    image: mariadb/maxscale
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./maxscale.cnf:/etc/maxscale.cnf
     depends_on:
       - db1
       - db2
-      - db3
 
-  # Keycloak
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
+  db1:
+    image: mariadb
     environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=dbname
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - db1_data:/var/lib/mysql
+      - ./db1.cnf:/etc/mysql/conf.d/my.cnf
+    command: mysqld
     ports:
-      - "8080:8080"
-    command:
-      - start-dev
+      - "3307:3306"
 
-networks:
-  galera-net:
-    driver: bridge
+  db2:
+    image: mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=dbname
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - db2_data:/var/lib/mysql
+      - ./db2.cnf:/etc/mysql/conf.d/my.cnf
+    command: mysqld
+    ports:
+      - "3308:3306"
 
+volumes:
+  db1_data:
+  db2_data:
