@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   frontend:
-    image: your-frontend-image
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     environment:
       - BACKEND_URL=http://backend:8080
       - KEYCLOAK_URL=http://keycloak:8080
@@ -13,7 +15,9 @@ services:
       - keycloak
 
   frontend-dev:
-    image: your-frontend-dev-image
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     environment:
       - BACKEND_URL=http://backend:8080
       - KEYCLOAK_URL=http://keycloak:8080
@@ -26,7 +30,9 @@ services:
       - keycloak
 
   backend:
-    image: your-backend-image
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     environment:
       - DATABASE_URL=mysql://user:password@maxscale/dbname
       - KEYCLOAK_URL=http://keycloak:8080
@@ -37,7 +43,9 @@ services:
       - keycloak
 
   backend-dev:
-    image: your-backend-dev-image
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     environment:
       - DATABASE_URL=mysql://user:password@maxscale/dbname
       - KEYCLOAK_URL=http://keycloak:8080
@@ -50,7 +58,7 @@ services:
       - keycloak
 
   keycloak:
-    image: jboss/keycloak
+    image: quay.io/keycloak/keycloak:latest
     environment:
       - DB_VENDOR=mysql
       - DB_ADDR=maxscale
